@@ -373,7 +373,10 @@ class UnboundField(object):
             _translations=translations,
             **kwargs
         )
-        return self.field_class(*self.args, **kw)
+        field = self.field_class(*self.args, **kw)
+        field._form = form
+        field._parent = form
+        return field
 
     def __repr__(self):
         return '<UnboundField(%s, %r, %r)>' % (self.field_class.__name__, self.args, self.kwargs)
@@ -864,6 +867,8 @@ class FormField(Field):
             self.form = self.form_class(formdata=formdata, prefix=prefix, **data)
         else:
             self.form = self.form_class(formdata=formdata, obj=data, prefix=prefix)
+        self.form._form_field = self
+        self.form._parent = self
 
     def validate(self, form, extra_validators=tuple()):
         if extra_validators:
@@ -1025,6 +1030,8 @@ class FieldList(Field):
         id = '%s-%d' % (self.id, index)
         field = self.unbound_field.bind(form=None, name=name, prefix=self._prefix, id=id, _meta=self.meta,
                                         translations=self._translations)
+        field._field_list = self
+        field._parent = self
         field.process(formdata, data)
         self.entries.append(field)
         return field
